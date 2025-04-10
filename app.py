@@ -3,7 +3,6 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import tempfile
-from io import BytesIO
 
 st.set_page_config(page_title="El Tespiti", page_icon="🖐️")
 st.title("🖐️ El Tespiti Uygulaması")
@@ -46,6 +45,8 @@ if uploaded_video is not None:
     temp_input = tempfile.NamedTemporaryFile(delete=False)
     temp_input.write(uploaded_video.read())
 
+    temp_output = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+
     cap = cv2.VideoCapture(temp_input.name)
     fps = cap.get(cv2.CAP_PROP_FPS)
     if fps == 0 or np.isnan(fps):
@@ -55,9 +56,6 @@ if uploaded_video is not None:
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    
-    # Yeni video çıkışı için temp dosya
-    temp_output = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
     out = cv2.VideoWriter(temp_output.name, fourcc, fps, (width, height))
 
     hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2)
@@ -90,7 +88,15 @@ if uploaded_video is not None:
 
     st.success(f"Video başarıyla işlendi! Toplam kare: {frame_count}")
 
-    # ✅ Videoyu BytesIO olarak göster
+    # ✅ Video İndirme ve Oynatma
     with open(temp_output.name, 'rb') as f:
         video_bytes = f.read()
+        st.download_button(
+            label="İşlenmiş Videoyu İndir",
+            data=video_bytes,
+            file_name="islenmis_video.mp4",
+            mime="video/mp4"
+        )
+        
+        # Streamlit video oynatıcı
         st.video(video_bytes)
