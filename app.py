@@ -59,11 +59,11 @@ if uploaded_video is not None:
     hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2)
     st.info("Videoyu işliyoruz, lütfen bekleyin...")
 
-    # İşlenmiş videoyu kaydetmek için
+    # Video yazıcısı
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out_path = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False).name
     fps = cap.get(cv2.CAP_PROP_FPS)
-    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     out = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
 
@@ -84,13 +84,14 @@ if uploaded_video is not None:
                     if id == 0:
                         cv2.circle(frame, (cx, cy), 5, (255, 0, 0), cv2.FILLED)
 
-        # Videoyu RGB'den BGR'ye çevirip yazıyoruz
+        # Yazma
         out.write(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
 
     cap.release()
     out.release()
     st.success("Video işleme tamamlandı!")
 
-    # İşlenmiş videoyu oynat
-    st.video(out_path)
-
+    # ✅ Binary olarak aç ve göster
+    with open(out_path, 'rb') as video_file:
+        st.video(video_file.read())
+        
