@@ -24,7 +24,7 @@ def process_image(image):
                 h, w, c = image.shape
                 cx, cy = int(lm.x * w), int(lm.y * h)
                 if id == 0:
-                    cv2.circle(image, (cx, cy), 5, (255, 0, 0), cv2.FILLED)
+                    cv2.circle(image, (cx, cy), 3, (255, 0, 0), cv2.FILLED)
         return image, True
     return image, False
 
@@ -76,7 +76,7 @@ if uploaded_video is not None:
                     h, w, c = frame.shape
                     cx, cy = int(lm.x * w), int(lm.y * h)
                     if id == 0:
-                        cv2.circle(frame, (cx, cy), 5, (255, 0, 0), cv2.FILLED)
+                        cv2.circle(frame, (cx, cy), 3, (255, 0, 0), cv2.FILLED)
 
         stframe.image(frame, channels="RGB")
 
