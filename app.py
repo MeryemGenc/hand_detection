@@ -88,7 +88,7 @@ if uploaded_video is not None:
 
     st.success(f"Video başarıyla işlendi! Toplam kare: {frame_count}")
 
-    # ✅ Video İndirme ve Oynatma
+    # ✅ Video İndirme
     with open(temp_output.name, 'rb') as f:
         video_bytes = f.read()
         st.download_button(
@@ -97,6 +97,3 @@ if uploaded_video is not None:
             file_name="islenmis_video.mp4",
             mime="video/mp4"
         )
-        
-        # Streamlit video oynatıcı
-        st.video(video_bytes)
