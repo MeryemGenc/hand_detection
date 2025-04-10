@@ -3,39 +3,82 @@ import cv2
 import mediapipe as mp
 import numpy as np
 from PIL import Image
+import tempfile
 
+st.set_page_config(page_title="El Tespiti", page_icon="🖐️")
 st.title("🖐️ El Tespiti Uygulaması")
-st.write("Bir görsel yükleyin, biz de içindeki eli tespit edip anahtar noktalarını gösterelim.")
+st.write("Görsel ya da video yükleyin, içindeki elleri tespit edelim!")
 
-uploaded_file = st.file_uploader("Bir görsel yükleyin", type=["jpg", "jpeg", "png"])
+mp_hands = mp.solutions.hands
+mp_draw = mp.solutions.drawing_utils
+
+
+def process_image(image):
+    hands = mp_hands.Hands(static_image_mode=True, max_num_hands=2)
+    results = hands.process(image)
+
+    if results.multi_hand_landmarks:
+        for handLms in results.multi_hand_landmarks:
+            mp_draw.draw_landmarks(image, handLms, mp_hands.HAND_CONNECTIONS)
+            for id, lm in enumerate(handLms.landmark):
+                h, w, c = image.shape
+                cx, cy = int(lm.x * w), int(lm.y * h)
+                if id == 0:
+                    cv2.circle(image, (cx, cy), 5, (255, 0, 0), cv2.FILLED)
+        return image, True
+    return image, False
+
+
+# Görsel işle
+st.header("🖼️ Görsel Yükleyerek El Tespiti")
+uploaded_file = st.file_uploader("Bir görsel seçin", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Görseli oku
     file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
     img = cv2.imdecode(file_bytes, 1)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-    # Mediapipe el modeli
-    mp_hands = mp.solutions.hands
-    mp_draw = mp.solutions.drawing_utils
-    hands = mp_hands.Hands(static_image_mode=True, max_num_hands=2)
+    processed_img, found = process_image(img)
 
-    # İşleme
-    results = hands.process(img)
-
-    if results.multi_hand_landmarks:
-        for handLms in results.multi_hand_landmarks:
-            mp_draw.draw_landmarks(img, handLms, mp_hands.HAND_CONNECTIONS)
-
-            for id, lm in enumerate(handLms.landmark):
-                h, w, c = img.shape
-                cx, cy = int(lm.x * w), int(lm.y * h)
-                if id == 0:
-                    cv2.circle(img, (cx, cy), 9, (255, 0, 0), cv2.FILLED)
-
+    if found:
         st.success("El başarıyla tespit edildi!")
     else:
         st.warning("Görselde el bulunamadı.")
 
-    # Görseli göster
-    st.image(img, caption="İşlenmiş Görsel", use_column_width=True)
+    st.image(processed_img, caption="İşlenmiş Görsel", use_column_width=True)
+
+# Video işle
+st.header("🎥 Video Yükleyerek El Tespiti")
+uploaded_video = st.file_uploader("Bir video seçin", type=["mp4", "avi", "mov"])
+
+if uploaded_video is not None:
+    tfile = tempfile.NamedTemporaryFile(delete=False)
+    tfile.write(uploaded_video.read())
+
+    cap = cv2.VideoCapture(tfile.name)
+    hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2)
+    stframe = st.empty()
+
+    st.info("Videoyu işliyoruz, lütfen bekleyin...")
+
+    while cap.isOpened():
+        success, frame = cap.read()
+        if not success:
+            break
+
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = hands.process(frame)
+
+        if results.multi_hand_landmarks:
+            for handLms in results.multi_hand_landmarks:
+                mp_draw.draw_landmarks(frame, handLms, mp_hands.HAND_CONNECTIONS)
+                for id, lm in enumerate(handLms.landmark):
+                    h, w, c = frame.shape
+                    cx, cy = int(lm.x * w), int(lm.y * h)
+                    if id == 0:
+                        cv2.circle(frame, (cx, cy), 5, (255, 0, 0), cv2.FILLED)
+
+        stframe.image(frame, channels="RGB")
+
+    cap.release()
+    st.success("Video işleme tamamlandı!")
